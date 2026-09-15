@@ -3,3 +3,5 @@
 .reading-detail{margin:0 auto 19px;max-width:310px;font-size:14px;line-height:1.7;color:#cdbb99}.teacher{margin-top:2px;padding-top:17px}.reading::after{content:"✦";display:block;margin-top:19px;color:#b99657;font-size:11px;letter-spacing:8px}.reading + footer{padding-bottom:34px}
 
 #mic.mic-pulse{animation:mic-cue 1.8s ease-in-out infinite}@keyframes mic-cue{0%,100%{background:#14110dd9;border-color:#aa875b80;box-shadow:0 0 0 transparent}48%{background:#3a1618;border-color:#9a3d37;box-shadow:0 0 15px #7f251955}}#mic.mic-active{background:#1a1712;color:#d8bd8b;border-color:#c49a5566;box-shadow:none}@media(prefers-reduced-motion:reduce){#mic.mic-pulse{animation:none}}
+
+.controls{justify-content:center}.controls #mic{flex:0 1 245px}.mic-hidden{display:none!important}#status.result-cue{animation:result-cue 1.4s ease-in-out infinite}@keyframes result-cue{0%,100%{color:#dac6a5;text-shadow:none}50%{color:#b4463c;text-shadow:0 0 12px #7f2519}}.reading-detail{white-space:pre-line;color:#bfa87e}.again{margin-top:22px;width:100%;background:#d0ad72;color:#17120d}@media(prefers-reduced-motion:reduce){#status.result-cue{animation:none}}
