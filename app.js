@@ -9,7 +9,7 @@ const cards = deck.map((name,i) => {
  $('stage').appendChild(el);return {el,i,panels,launched:false};
 });
 function paperPose(bend){let x=0,z=0;return Array.from({length:10},(_,j)=>{const angle=bend*(j/9-.5),rad=angle*Math.PI/180;const pose={transform:'translate3d('+x+'px,0,'+z+'px) rotateY('+angle+'deg)'};x+=16*Math.cos(rad);z-=16*Math.sin(rad);return pose;});}
-function bendPaper(c,v,duration){const amount=(Math.random()<.5?-1:1)*(34+v*16);const stages=[[0,0],[.14,.22],[.27,1],[.43,1],[.57,.35],[.74,-.12],[1,0]];const poses=stages.map(([offset,strength])=>paperPose(reduced?0:amount*strength));c.panels.forEach((panel,j)=>panel.animate(stages.map(([offset],k)=>({...poses[k][j],offset})),{duration,easing:'ease-in-out',fill:'forwards'}));}
+function bendPaper(c,v,duration){const amount=(Math.random()<.5?-1:1)*(51+v*24);const stages=[[0,0],[.14,.22],[.27,1],[.43,1],[.57,.35],[.74,-.12],[1,0]];const poses=stages.map(([offset,strength])=>paperPose(reduced?0:amount*strength));c.panels.forEach((panel,j)=>panel.animate(stages.map(([offset],k)=>({...poses[k][j],offset})),{duration,easing:'ease-in-out',fill:'forwards'}));}
 
 let stream=null,ctx=null,analyser=null,data=null,frame=0,session=0,running=false,flight=0,restore=0,last=0,energy=0,noise=.006,calUntil=0,samples=[],smooth=0,previous=0,previewTimer=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -18,19 +18,16 @@ function wind(v){v=Math.max(0,Math.min(1,v));const n=Math.round(v*100);$('bar').
 function launch(v){
  if(flight>=cards.length-1){$('status').textContent='最後一張牌留下了。';return;}
  const c=[...cards].reverse().find(c=>!c.launched);if(!c)return;c.launched=true;flight++;$('remaining').textContent=(cards.length-flight)+' / '+cards.length;
- const duration=reduced?220:2800-v*140;bendPaper(c,v,duration);const start=c.el.style.transform;
+ const duration=reduced?220:2050-v*120;bendPaper(c,v,duration);const start=c.el.style.transform;
  const side=c.i%2?1:-1,dx=side*(130+Math.random()*130)*(.7+v),turn=side*(120+v*220),sway=side*(7+Math.random()*3);
- const leavesFrame=Math.random()<.5,airX=leavesFrame?dx*1.35:dx*.58,airY=leavesFrame?-300-Math.random()*160:-120-Math.random()*75;
- const landX=side*(52+Math.random()*58),landY=72+Math.random()*42,landAngle=side*(8+Math.random()*16),faceTurn=Math.random()<.5?0:180;
+ const airX=dx*(1.25+Math.random()*.45),airY=-300-Math.random()*190,faceTurn=Math.random()<.5?0:180;
  c.el.style.zIndex=String(20+flight);
  const anim=c.el.animate([
   {transform:start,opacity:1},
   {transform:start+' translateY(-7px) rotateX(-5deg) rotateY('+sway+'deg)',opacity:1,offset:.14},
   {transform:start+' translateY(-12px) rotateX(-9deg) rotateY('+sway+'deg)',opacity:1,offset:.32},
-  {transform:'translate3d('+airX+'px,'+airY+'px,150px) rotateX(65deg) rotateY('+(faceTurn+75)+'deg) rotateZ('+turn*.38+'deg)',opacity:1,offset:.55},
-  {transform:'translate3d('+landX+'px,'+landY+'px,0) rotateX(0deg) rotateY('+faceTurn+'deg) rotateZ('+landAngle+'deg)',opacity:1,offset:.75},
-  {transform:'translate3d('+landX+'px,'+landY+'px,0) rotateX(0deg) rotateY('+faceTurn+'deg) rotateZ('+landAngle+'deg)',opacity:1,offset:.91},
-  {transform:'translate3d('+landX+'px,'+landY+'px,0) rotateX(0deg) rotateY('+faceTurn+'deg) rotateZ('+landAngle+'deg)',opacity:0,offset:1}
+  {transform:'translate3d('+airX*.42+'px,'+airY*.28+'px,150px) rotateX(55deg) rotateY('+(faceTurn+55)+'deg) rotateZ('+turn*.28+'deg)',opacity:1,offset:.58},
+  {transform:'translate3d('+airX+'px,'+airY+'px,210px) rotateX(150deg) rotateY('+(faceTurn+180)+'deg) rotateZ('+turn+'deg)',opacity:0,offset:1}
  ],{duration,easing:'cubic-bezier(.2,.65,.4,1)',fill:'forwards'});
  anim.onfinish=()=>{c.el.style.opacity='0';};
  if(flight===cards.length-1){$('status').textContent='最後一張牌留下了，靜候答案。';}
