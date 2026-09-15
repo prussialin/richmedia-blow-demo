@@ -15,12 +15,31 @@ let stream=null,ctx=null,analyser=null,data=null,frame=0,session=0,running=false
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function stack(){clearInterval(previewTimer);clearTimeout(restore);cards.forEach(c=>{c.el.getAnimations({subtree:true}).forEach(a=>a.cancel());c.panels.forEach((panel,j)=>{panel.style.transform='translate3d('+(j*16)+'px,0,0)';});c.launched=false;c.el.style.opacity='1';c.el.style.transform='translate3d('+(c.i-2)*4+'px,'+(4-c.i)*-3+'px,0) rotate('+((c.i-2)*4)+'deg)';});energy=0;flight=0;$('remaining').textContent=cards.length+' / '+cards.length;}
 function wind(v){v=Math.max(0,Math.min(1,v));const n=Math.round(v*100);$('bar').style.width=n+'%';$('power').textContent=n+'%';$('meter').setAttribute('aria-valuenow',n);}
-function launch(v){const c=[...cards].reverse().find(c=>!c.launched);if(!c)return;c.launched=true;flight++;$('remaining').textContent=(cards.length-flight)+' / '+cards.length;const duration=reduced?180:1850-v*120;bendPaper(c,v,duration);const start=c.el.style.transform;const dx=(c.i%2?1:-1)*(130+Math.random()*130)*(.7+v);const dy=-240-v*190;const turn=(c.i%2?1:-1)*(120+v*220);const sway=(c.i%2?1:-1)*(7+Math.random()*3);const anim=c.el.animate([{transform:start,opacity:1},{transform:start+' translateY(-7px) rotateX(-5deg) rotateY('+sway+'deg)',opacity:1,offset:.18},{transform:start+' translateY(-12px) rotateX(-9deg) rotateY('+sway+'deg)',opacity:1,offset:.43},{transform:'translate3d('+dx*.16+'px,-55px,45px) rotateX(35deg) rotateY('+sway+'deg) rotateZ('+turn*.12+'deg)',opacity:1,offset:.60},{transform:'translate3d('+dx+'px,'+dy+'px,150px) rotateX('+(200+v*300)+'deg) rotateY(120deg) rotateZ('+turn+'deg)',opacity:0}],{duration,easing:'cubic-bezier(.2,.65,.4,1)',fill:'forwards'});anim.onfinish=()=>{c.el.style.opacity='0';};if(flight===cards.length){$('status').textContent='漂亮！全場吹散。再來一次？';restore=setTimeout(()=>{stack();$('status').textContent='牌已回到桌上，再許一個願望。';},2800);}}
+function launch(v){
+ if(flight>=cards.length-1){$('status').textContent='最後一張牌留下了。';return;}
+ const c=[...cards].reverse().find(c=>!c.launched);if(!c)return;c.launched=true;flight++;$('remaining').textContent=(cards.length-flight)+' / '+cards.length;
+ const duration=reduced?220:2800-v*140;bendPaper(c,v,duration);const start=c.el.style.transform;
+ const side=c.i%2?1:-1,dx=side*(130+Math.random()*130)*(.7+v),turn=side*(120+v*220),sway=side*(7+Math.random()*3);
+ const leavesFrame=Math.random()<.5,airX=leavesFrame?dx*1.35:dx*.58,airY=leavesFrame?-300-Math.random()*160:-120-Math.random()*75;
+ const landX=side*(52+Math.random()*58),landY=72+Math.random()*42,landAngle=side*(8+Math.random()*16),faceTurn=Math.random()<.5?0:180;
+ c.el.style.zIndex=String(20+flight);
+ const anim=c.el.animate([
+  {transform:start,opacity:1},
+  {transform:start+' translateY(-7px) rotateX(-5deg) rotateY('+sway+'deg)',opacity:1,offset:.14},
+  {transform:start+' translateY(-12px) rotateX(-9deg) rotateY('+sway+'deg)',opacity:1,offset:.32},
+  {transform:'translate3d('+airX+'px,'+airY+'px,150px) rotateX(65deg) rotateY('+(faceTurn+75)+'deg) rotateZ('+turn*.38+'deg)',opacity:1,offset:.55},
+  {transform:'translate3d('+landX+'px,'+landY+'px,0) rotateX(0deg) rotateY('+faceTurn+'deg) rotateZ('+landAngle+'deg)',opacity:1,offset:.75},
+  {transform:'translate3d('+landX+'px,'+landY+'px,0) rotateX(0deg) rotateY('+faceTurn+'deg) rotateZ('+landAngle+'deg)',opacity:1,offset:.91},
+  {transform:'translate3d('+landX+'px,'+landY+'px,0) rotateX(0deg) rotateY('+faceTurn+'deg) rotateZ('+landAngle+'deg)',opacity:0,offset:1}
+ ],{duration,easing:'cubic-bezier(.2,.65,.4,1)',fill:'forwards'});
+ anim.onfinish=()=>{c.el.style.opacity='0';};
+ if(flight===cards.length-1){$('status').textContent='最後一張牌留下了，靜候答案。';}
+}
 function stop(message){session++;running=false;cancelAnimationFrame(frame);clearInterval(previewTimer);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;if(ctx)ctx.close().catch(()=>{});ctx=null;analyser=null;data=null;wind(0);$('mic').disabled=false;$('mic').textContent='開啟麥克風';if(message)$('status').textContent=message;}
 function tick(now){if(!running||!analyser)return;const dt=Math.min(.05,(now-previous)/1000||.016);previous=now;analyser.getByteTimeDomainData(data);let sum=0;for(const b of data){const x=(b-128)/128;sum+=x*x;}const rms=Math.sqrt(sum/data.length);if(now<calUntil){samples.push(rms);wind(0);}else{if(samples.length){samples.sort((a,b)=>a-b);noise=Math.max(.003,samples[Math.floor(samples.length*.6)]);samples=[];$('status').textContent='準備好了，對著麥克風輕輕吹氣。';}const v=Math.min(1,Math.max(0,rms-noise*1.8-.008)*Number($('sensitivity').value)*7);smooth+=(v-smooth)*.3;wind(smooth);energy=smooth>.12?energy+smooth*dt:Math.max(0,energy-dt);if(energy>.055&&now-last>140){launch(smooth);last=now;energy=0;}}frame=requestAnimationFrame(tick);}
 $('mic').addEventListener('click',async()=>{if(running){stop('麥克風已關閉。');return;}if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){$('status').textContent='請透過 HTTPS 網址，用 Safari 或 Chrome 開啟。';return;}const token=++session;$('mic').disabled=true;$('status').textContent='請允許麥克風存取…';try{const Audio=window.AudioContext||window.webkitAudioContext;ctx=new Audio();await ctx.resume();const obtained=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},video:false});if(token!==session){obtained.getTracks().forEach(t=>t.stop());return;}stream=obtained;analyser=ctx.createAnalyser();analyser.fftSize=1024;ctx.createMediaStreamSource(stream).connect(analyser);data=new Uint8Array(analyser.fftSize);running=true;samples=[];smooth=0;calUntil=performance.now()+1500;previous=performance.now();stack();$('mic').textContent='關閉麥克風';$('mic').disabled=false;$('status').textContent='校正環境音中，請安靜 1.5 秒…';stream.getAudioTracks()[0].onended=()=>{if(running)stop('麥克風連線已中斷，請重新開啟。');};frame=requestAnimationFrame(tick);}catch(e){if(token!==session)return;const msg=e.name==='NotAllowedError'?'麥克風未獲允許。請在瀏覽器網站設定允許後重試。':e.name==='NotFoundError'?'找不到麥克風，可先點「試吹一下」。':'無法啟動麥克風，請關閉其他錄音程式後重試。';stop(msg);}});
 function simulate(){
- clearInterval(previewTimer); if(cards.every(c=>c.launched))stack();
+ clearInterval(previewTimer); if(flight>=cards.length-1)stack();
  $('status').textContent='讓氣流，揭開命運的一角。';
  wind(.8);launch(.8);
  previewTimer=setTimeout(()=>wind(0),520);
