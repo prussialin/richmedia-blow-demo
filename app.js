@@ -22,8 +22,8 @@ $('mic').addEventListener('click',async()=>{if(running){stop('麥克風已關閉
 function simulate(){
  clearInterval(previewTimer); if(cards.every(c=>c.launched))stack();
  $('status').textContent='讓氣流，揭開命運的一角。';
- let n=0;wind(.8);launch(.8);
- previewTimer=setInterval(()=>{if(++n<3)launch(.65+Math.random()*.3);else{clearInterval(previewTimer);wind(0);}},230);
+ wind(.8);launch(.8);
+ previewTimer=setTimeout(()=>wind(0),520);
 }
 $('test').addEventListener('click',simulate);
 $('stage').addEventListener('click',simulate);
