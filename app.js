@@ -6,18 +6,19 @@ const titles = ['The Fool','The Magician','The High Priestess','The Emperor','Th
 const cards = deck.map((name,i) => {
  const el=document.createElement('div');el.className='card';el.setAttribute('aria-label',titles[i]);
  const panels=Array.from({length:10},(_,j)=>{const panel=document.createElement('div');panel.className='paper-panel';panel.innerHTML='<div class="paper-face"><div class="paper-print" style="left:'+(-j*16)+'px;background-image:url(assets/'+name+'.webp)"></div></div><div class="paper-face paper-back"><div class="back-print" style="left:'+(-j*16)+'px"></div></div>';el.appendChild(panel);return panel;});
- $('stage').appendChild(el);return {el,i,panels,launched:false};
+ $('stage').appendChild(el);return {el,i,panels,launched:false,slot:i};
 });
+function shuffleDeck(){const shuffled=[...cards];for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}shuffled.forEach((c,slot)=>{c.slot=slot;});}
 function paperPose(bend){let x=0,z=0;return Array.from({length:10},(_,j)=>{const angle=bend*(j/9-.5),rad=angle*Math.PI/180;const pose={transform:'translate3d('+x+'px,0,'+z+'px) rotateY('+angle+'deg)'};x+=16*Math.cos(rad);z-=16*Math.sin(rad);return pose;});}
 function bendPaper(c,v,duration){const amount=(Math.random()<.5?-1:1)*(51+v*24);const stages=[[0,0],[.14,.22],[.27,1],[.43,1],[.57,.35],[.74,-.12],[1,0]];const poses=stages.map(([offset,strength])=>paperPose(reduced?0:amount*strength));c.panels.forEach((panel,j)=>panel.animate(stages.map(([offset],k)=>({...poses[k][j],offset})),{duration,easing:'ease-in-out',fill:'forwards'}));}
 
 let stream=null,ctx=null,analyser=null,data=null,frame=0,session=0,running=false,flight=0,restore=0,last=0,energy=0,noise=.006,calUntil=0,samples=[],smooth=0,previous=0,previewTimer=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function stack(){clearInterval(previewTimer);clearTimeout(restore);cards.forEach(c=>{c.el.getAnimations({subtree:true}).forEach(a=>a.cancel());c.panels.forEach((panel,j)=>{panel.style.transform='translate3d('+(j*16)+'px,0,0)';});c.launched=false;c.el.style.opacity='1';c.el.style.transform='translate3d('+(c.i-2)*4+'px,'+(4-c.i)*-3+'px,0) rotate('+((c.i-2)*4)+'deg)';});energy=0;flight=0;$('remaining').textContent=cards.length+' / '+cards.length;}
+function stack(){clearInterval(previewTimer);clearTimeout(restore);shuffleDeck();cards.forEach(c=>{c.el.getAnimations({subtree:true}).forEach(a=>a.cancel());c.panels.forEach((panel,j)=>{panel.style.transform='translate3d('+(j*16)+'px,0,0)';});c.launched=false;c.el.style.opacity='1';c.el.style.zIndex=String(c.slot);c.el.style.transform='translate3d('+(c.slot-2)*4+'px,'+(4-c.slot)*-3+'px,0) rotate('+((c.slot-2)*4)+'deg)';});energy=0;flight=0;$('remaining').textContent=cards.length+' / '+cards.length;}
 function wind(v){v=Math.max(0,Math.min(1,v));const n=Math.round(v*100);$('bar').style.width=n+'%';$('power').textContent=n+'%';$('meter').setAttribute('aria-valuenow',n);}
 function launch(v){
  if(flight>=cards.length-1){$('status').textContent='最後一張牌留下了。';return;}
- const c=[...cards].reverse().find(c=>!c.launched);if(!c)return;c.launched=true;flight++;$('remaining').textContent=(cards.length-flight)+' / '+cards.length;
+ const c=[...cards].filter(c=>!c.launched).sort((a,b)=>b.slot-a.slot)[0];if(!c)return;c.launched=true;flight++;$('remaining').textContent=(cards.length-flight)+' / '+cards.length;
  const duration=reduced?220:2050-v*120;bendPaper(c,v,duration);const start=c.el.style.transform;
  const side=c.i%2?1:-1,dx=side*(130+Math.random()*130)*(.7+v),turn=side*(120+v*220),sway=side*(7+Math.random()*3);
  const airX=dx*(1.25+Math.random()*.45),airY=-300-Math.random()*190,faceTurn=Math.random()<.5?0:180;
