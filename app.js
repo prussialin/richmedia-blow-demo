@@ -1,14 +1,18 @@
 
 'use strict';
 const $ = id => document.getElementById(id);
-const deck = ['fool','magician','priestess','emperor','sun','star','moon'];
-const titles = ['The Fool','The Magician','The High Priestess','The Emperor','The Sun','The Star','The Moon'];
-const cards = deck.map((name,i) => {
- const el=document.createElement('div');el.className='card';el.setAttribute('aria-label',titles[i]);
- const panels=Array.from({length:10},(_,j)=>{const panel=document.createElement('div');panel.className='paper-panel';panel.innerHTML='<div class="paper-face"><div class="paper-print" style="left:'+(-j*16)+'px;background-image:url(assets/'+name+'.webp)"></div></div><div class="paper-face paper-back"><div class="back-print" style="left:'+(-j*16)+'px"></div></div>';el.appendChild(panel);return panel;});
- $('stage').appendChild(el);return {el,i,panels,launched:false,slot:i};
+const library=[
+ ['fool','The Fool'],['magician','The Magician'],['priestess','The High Priestess'],['empress','The Empress'],['emperor','The Emperor'],['hierophant','The Hierophant'],['lovers','The Lovers'],['chariot','The Chariot'],['strength','Strength'],['hermit','The Hermit'],['wheel','Wheel of Fortune'],['justice','Justice'],['hanged-man','The Hanged Man'],['death','Death'],['temperance','Temperance'],['devil','The Devil'],['tower','The Tower'],['star','The Star'],['moon','The Moon'],['sun','The Sun'],['judgement','Judgement'],['world','The World']
+].map(([name,title])=>({name,title}));
+const DRAW_COUNT=10;
+const cards=Array.from({length:DRAW_COUNT},(_,i)=>{
+ const el=document.createElement('div');el.className='card';
+ const panels=Array.from({length:10},(_,j)=>{const panel=document.createElement('div');panel.className='paper-panel';panel.innerHTML='<div class="paper-face"><div class="paper-print" style="left:'+(-j*16)+'px"></div></div><div class="paper-face paper-back"><div class="back-print" style="left:'+(-j*16)+'px"></div></div>';el.appendChild(panel);return panel;});
+ $('stage').appendChild(el);return {el,i,panels,prints:panels.map(panel=>panel.querySelector('.paper-print')),launched:false,slot:i,definition:null};
 });
-function shuffleDeck(){const shuffled=[...cards];for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}shuffled.forEach((c,slot)=>{c.slot=slot;});}
+function shuffle(list){const shuffled=[...list];for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}return shuffled;}
+function setCard(c,definition){c.definition=definition;c.el.setAttribute('aria-label',definition.title);c.prints.forEach((print,j)=>{print.style.left=(-j*16)+'px';print.style.backgroundImage='url(assets/'+definition.name+'.webp)';});}
+function shuffleDeck(){const drawn=shuffle(library).slice(0,DRAW_COUNT);shuffle(cards).forEach((c,slot)=>{c.slot=slot;setCard(c,drawn[slot]);});}
 function paperPose(bend){let x=0,z=0;return Array.from({length:10},(_,j)=>{const angle=bend*(j/9-.5),rad=angle*Math.PI/180;const pose={transform:'translate3d('+x+'px,0,'+z+'px) rotateY('+angle+'deg)'};x+=16*Math.cos(rad);z-=16*Math.sin(rad);return pose;});}
 function bendPaper(c,v,duration){const amount=(Math.random()<.5?-1:1)*(51+v*24);const stages=[[0,0],[.14,.22],[.27,1],[.43,1],[.57,.35],[.74,-.12],[1,0]];const poses=stages.map(([offset,strength])=>paperPose(reduced?0:amount*strength));c.panels.forEach((panel,j)=>panel.animate(stages.map(([offset],k)=>({...poses[k][j],offset})),{duration,easing:'ease-in-out',fill:'forwards'}));}
 
